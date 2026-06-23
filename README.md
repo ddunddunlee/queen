@@ -48,6 +48,19 @@ This project is ready for Vercel.
 3. Add the environment variables from `.env.example`.
 4. Deploy with the default Next.js settings.
 
+## GitHub Pages
+
+This repository includes a GitHub Actions workflow for static GitHub Pages deployment.
+
+After pushing to `main`, open the repository on GitHub:
+
+1. Go to `Settings` -> `Pages`.
+2. Set `Source` to `GitHub Actions`.
+3. Run the `Deploy GitHub Pages` workflow or push to `main`.
+4. Open `https://ddunddunlee.github.io/queen/`.
+
+GitHub Pages can run the client-side tools: Prompt Builder, Image Normalizer, and Sprite Sheet Generator. The subscribed OpenAI generation page needs a server runtime, so deploy to Vercel for that feature.
+
 ## Scripts
 
 ```bash

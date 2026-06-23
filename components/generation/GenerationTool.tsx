@@ -33,6 +33,7 @@ Animation frame:
 - Motion description: lunging forward and extending the spear horizontally in a clear stabbing motion`;
 
 export function GenerationTool() {
+  const isStaticExport = process.env.NEXT_PUBLIC_STATIC_EXPORT === "true";
   const [prompt, setPrompt] = useState(defaultPrompt);
   const [count, setCount] = useState(4);
   const [spriteSize, setSpriteSize] = useState<PreviewSpriteSize>(32);
@@ -68,6 +69,11 @@ export function GenerationTool() {
   );
 
   async function generate() {
+    if (isStaticExport) {
+      setError("GitHub Pages is static hosting, so server-side OpenAI generation is unavailable here. Use Vercel for subscribed auto generation.");
+      return;
+    }
+
     try {
       setIsGenerating(true);
       setError("");
@@ -162,6 +168,11 @@ Aseprite:
             Enter one prompt, choose a count, and let the server generate every PNG through the configured image API.
           </p>
         </div>
+        {isStaticExport ? (
+          <p className="rounded-md border border-amber/30 bg-amber/10 p-3 text-sm leading-6 text-amber">
+            GitHub Pages build supports client-side tools only. Use Vercel deployment for subscribed OpenAI image generation.
+          </p>
+        ) : null}
         <SubscriptionPanel token={subscriptionToken} onTokenChange={setSubscriptionToken} />
         <label className="space-y-2">
           <span className="text-sm font-medium text-slate-200">Prompt</span>
@@ -189,7 +200,7 @@ Aseprite:
         </div>
         {error ? <p className="rounded-md border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-100">{error}</p> : null}
         {status ? <p className="rounded-md border border-sky/30 bg-sky/10 p-3 text-sm text-sky">{status}</p> : null}
-        <Button disabled={isGenerating || !prompt.trim() || !subscriptionToken.trim()} onClick={generate}>
+        <Button disabled={isStaticExport || isGenerating || !prompt.trim() || !subscriptionToken.trim()} onClick={generate}>
           {isGenerating ? <Loader2 aria-hidden className="h-4 w-4 animate-spin" /> : <WandSparkles aria-hidden className="h-4 w-4" />}
           {isGenerating ? "Generating..." : "Generate Until Complete"}
         </Button>
