@@ -9,6 +9,12 @@ function assertRequestBody(body: Partial<GenerateSpritesRequest>): GenerateSprit
   const prompt = typeof body.prompt === "string" ? body.prompt.trim() : "";
   const count = Number(body.count);
   const spriteSize = Number(body.spriteSize);
+  const assetJobs = Array.isArray(body.assetJobs)
+    ? body.assetJobs.filter((job): job is string => typeof job === "string" && job.trim().length > 0).map((job) => job.trim())
+    : [];
+  const keywordBatches = Array.isArray(body.keywordBatches)
+    ? body.keywordBatches.map((batch) => (Array.isArray(batch) ? batch.filter((keyword): keyword is string => typeof keyword === "string") : []))
+    : [];
 
   if (!prompt) {
     throw new Error("Prompt is required.");
@@ -25,7 +31,9 @@ function assertRequestBody(body: Partial<GenerateSpritesRequest>): GenerateSprit
   return {
     prompt,
     count,
-    spriteSize: spriteSize as GenerateSpritesRequest["spriteSize"]
+    spriteSize: spriteSize as GenerateSpritesRequest["spriteSize"],
+    assetJobs,
+    keywordBatches
   };
 }
 
@@ -51,6 +59,10 @@ Use crisp hard-edged pixels, no blur, no gradients, and no anti-aliasing.`;
 
     const generated = await Promise.all(
       Array.from({ length: body.count }, async (_, index) => {
+        const job = body.assetJobs?.[index % Math.max(1, body.assetJobs.length)];
+        const keywords = body.keywordBatches?.[index] || [];
+        const jobBlock = job ? `\n\nAsset task: ${job}.` : "";
+        const keywordBlock = keywords.length > 0 ? `\nRandom variation keywords: ${keywords.join(", ")}.` : "";
         const response = await fetch("https://api.openai.com/v1/images/generations", {
           method: "POST",
           headers: {
@@ -59,7 +71,7 @@ Use crisp hard-edged pixels, no blur, no gradients, and no anti-aliasing.`;
           },
           body: JSON.stringify({
             model,
-            prompt: `${lockedPrompt}\n\nVariation index: ${index + 1}.`,
+            prompt: `${lockedPrompt}${jobBlock}${keywordBlock}\n\nVariation index: ${index + 1}.`,
             n: 1,
             size: IMAGE_OUTPUT_SIZE,
             response_format: "b64_json"

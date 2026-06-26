@@ -4,6 +4,8 @@ export interface GenerateSpritesRequest {
   prompt: string;
   count: number;
   spriteSize: PreviewSpriteSize;
+  assetJobs?: string[];
+  keywordBatches?: string[][];
 }
 
 export interface GeneratedSprite {
