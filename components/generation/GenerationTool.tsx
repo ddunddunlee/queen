@@ -3,7 +3,20 @@
 /* eslint-disable @next/next/no-img-element */
 
 import JSZip from "jszip";
-import { Copy, Download, Layers3, Loader2, Package, Plus, Shuffle, WandSparkles, X } from "lucide-react";
+import {
+  Copy,
+  Download,
+  Layers3,
+  Loader2,
+  Package,
+  Plus,
+  Save,
+  Shuffle,
+  Sparkles,
+  Trash2,
+  WandSparkles,
+  X
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -64,6 +77,16 @@ const keywordBank = [
   "sharp shadow"
 ];
 
+const promptPresetStorageKey = "pixel-asset-prompt-presets";
+
+interface PromptPreset {
+  id: string;
+  name: string;
+  basePrompt: string;
+  extraPrompt: string;
+  customKeywordText: string;
+}
+
 function pickKeywords(count: number) {
   return [...keywordBank].sort(() => Math.random() - 0.5).slice(0, count);
 }
@@ -81,6 +104,35 @@ Output contract:
 - Transparent PNG, single sprite only, not a sprite sheet.`;
 }
 
+function buildOptimizedPrompt(rawPrompt: string, existingExtraPrompt: string) {
+  const concept = rawPrompt.trim() || "A game-ready pixel art character asset.";
+  const extra = existingExtraPrompt.trim();
+
+  return `Core concept lock:
+- Create game-ready pixel art assets only.
+- Maintain one consistent design language across every generated output.
+- Use consistent character proportions, silhouette, color palette, outline thickness, camera scale, and lighting.
+- Transparent background.
+- Centered full-body sprite.
+- Crisp hard-edged pixels.
+- No anti-aliasing, no blur, no gradients, no soft painterly shading.
+- Every shape must read clearly on a visible pixel grid at the final sprite size.
+
+Character / asset concept:
+${concept}
+
+Required visual constraints:
+- limited palette
+- thick 1px-style black outline
+- readable silhouette
+- compact game-engine-friendly sprite
+- clean separation between body, weapon, clothing, and accessories
+- enough transparent padding for animation alignment
+
+Global style:
+retro pixel game asset, sprite-sheet compatible, engine-ready transparent PNG${extra ? `\n\nAdditional locked notes:\n${extra}` : ""}`;
+}
+
 export function GenerationTool() {
   const isStaticExport = process.env.NEXT_PUBLIC_STATIC_EXPORT === "true";
   const [basePrompt, setBasePrompt] = useState(defaultBasePrompt);
@@ -91,6 +143,12 @@ export function GenerationTool() {
   const [customKeywordText, setCustomKeywordText] = useState("blue cape, elite guard, darker armor");
   const [selectedTasks, setSelectedTasks] = useState<string[]>(baseTasks.slice(0, 8).map((task) => task.prompt));
   const [customTask, setCustomTask] = useState("");
+  const [presetName, setPresetName] = useState("기본 기사 프리셋");
+  const [promptPresets, setPromptPresets] = useState<PromptPreset[]>([]);
+  const [selectedPresetId, setSelectedPresetId] = useState("");
+  const [isConverterOpen, setIsConverterOpen] = useState(false);
+  const [converterInput, setConverterInput] = useState("");
+  const [converterOutput, setConverterOutput] = useState("");
   const [subscriptionToken, setSubscriptionToken] = useState("");
   const [sprites, setSprites] = useState<GeneratedSprite[]>([]);
   const [model, setModel] = useState("");
@@ -101,6 +159,19 @@ export function GenerationTool() {
 
   useEffect(() => {
     const savedToken = window.localStorage.getItem("sprite-generator-subscription-token");
+    const savedPresets = window.localStorage.getItem(promptPresetStorageKey);
+
+    if (savedPresets) {
+      try {
+        const parsedPresets = JSON.parse(savedPresets) as PromptPreset[];
+        if (Array.isArray(parsedPresets)) {
+          setPromptPresets(parsedPresets);
+        }
+      } catch {
+        window.localStorage.removeItem(promptPresetStorageKey);
+      }
+    }
+
     if (savedToken) {
       setSubscriptionToken(savedToken);
     } else if (process.env.NEXT_PUBLIC_ENABLE_DEV_SUBSCRIPTION === "true") {
@@ -113,6 +184,10 @@ export function GenerationTool() {
       window.localStorage.setItem("sprite-generator-subscription-token", subscriptionToken);
     }
   }, [subscriptionToken]);
+
+  useEffect(() => {
+    window.localStorage.setItem(promptPresetStorageKey, JSON.stringify(promptPresets));
+  }, [promptPresets]);
 
   const customKeywords = useMemo(
     () =>
@@ -160,6 +235,66 @@ export function GenerationTool() {
       setSelectedTasks((current) => [...current, task]);
     }
     setCustomTask("");
+  }
+
+  function savePromptPreset() {
+    const name = presetName.trim();
+    if (!name) {
+      setError("저장 이름을 입력해 주세요.");
+      return;
+    }
+
+    const preset: PromptPreset = {
+      id: selectedPresetId || crypto.randomUUID(),
+      name,
+      basePrompt,
+      extraPrompt,
+      customKeywordText
+    };
+
+    setPromptPresets((current) => {
+      const exists = current.some((item) => item.id === preset.id);
+      return exists ? current.map((item) => (item.id === preset.id ? preset : item)) : [...current, preset];
+    });
+    setSelectedPresetId(preset.id);
+    setStatus(`"${name}" 프리셋 저장 완료.`);
+    setError("");
+  }
+
+  function loadPromptPreset(id: string) {
+    const preset = promptPresets.find((item) => item.id === id);
+    setSelectedPresetId(id);
+    if (!preset) return;
+    setPresetName(preset.name);
+    setBasePrompt(preset.basePrompt);
+    setExtraPrompt(preset.extraPrompt);
+    setCustomKeywordText(preset.customKeywordText);
+    setStatus(`"${preset.name}" 프리셋 불러오기 완료.`);
+  }
+
+  function deletePromptPreset() {
+    if (!selectedPresetId) return;
+    const preset = promptPresets.find((item) => item.id === selectedPresetId);
+    setPromptPresets((current) => current.filter((item) => item.id !== selectedPresetId));
+    setSelectedPresetId("");
+    setStatus(preset ? `"${preset.name}" 프리셋 삭제 완료.` : "프리셋 삭제 완료.");
+  }
+
+  function openPromptConverter() {
+    setConverterInput(basePrompt);
+    setConverterOutput("");
+    setIsConverterOpen(true);
+  }
+
+  function convertPrompt() {
+    setConverterOutput(buildOptimizedPrompt(converterInput, extraPrompt));
+  }
+
+  function applyConvertedPrompt() {
+    if (!converterOutput.trim()) return;
+    setBasePrompt(converterOutput);
+    setIsConverterOpen(false);
+    setStatus("변환된 프롬프트를 기본 프롬프트에 적용했습니다.");
   }
 
   async function copyPrompt() {
@@ -281,8 +416,33 @@ Grid:
         <Card className="space-y-3">
             <div className="flex items-center justify-between gap-3">
               <h2 className="font-semibold">기본 프롬프트</h2>
-              <span className="font-mono text-xs text-slate-500">all jobs</span>
+              <Button onClick={openPromptConverter} variant="secondary">
+                <Sparkles aria-hidden className="h-4 w-4" />
+                프롬프트 변환기
+              </Button>
             </div>
+            <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto]">
+              <Input
+                placeholder="저장 이름"
+                value={presetName}
+                onChange={(event) => setPresetName(event.target.value)}
+              />
+              <Button onClick={savePromptPreset} variant="secondary">
+                <Save aria-hidden className="h-4 w-4" />
+                저장
+              </Button>
+              <Button disabled={!selectedPresetId} onClick={deletePromptPreset} variant="danger">
+                <Trash2 aria-hidden className="h-4 w-4" />
+              </Button>
+            </div>
+            <Select value={selectedPresetId} onChange={(event) => loadPromptPreset(event.target.value)}>
+              <option value="">저장된 프리셋 선택</option>
+              {promptPresets.map((preset) => (
+                <option key={preset.id} value={preset.id}>
+                  {preset.name}
+                </option>
+              ))}
+            </Select>
             <Textarea className="min-h-[300px] font-mono text-xs" value={basePrompt} onChange={(event) => setBasePrompt(event.target.value)} />
         </Card>
 
@@ -446,6 +606,52 @@ Grid:
           </div>
         </Card>
       </aside>
+      {isConverterOpen ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4">
+          <div className="w-full max-w-5xl rounded-lg border border-line bg-panel p-5 shadow-glow">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="font-mono text-xs uppercase text-sky">prompt optimizer</p>
+                <h2 className="mt-1 text-xl font-bold">프롬프트 변환기</h2>
+                <p className="mt-1 text-sm text-slate-400">
+                  대략적인 설명을 픽셀 에셋 생성에 유리한 영어 기본 프롬프트 구조로 정리합니다.
+                </p>
+              </div>
+              <Button className="h-10 w-10 p-0" onClick={() => setIsConverterOpen(false)} variant="secondary">
+                <X aria-hidden className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="mt-5 grid gap-4 lg:grid-cols-2">
+              <label className="space-y-2">
+                <span className="text-sm font-medium text-slate-200">원본 설명</span>
+                <Textarea
+                  className="min-h-[360px] font-mono text-xs"
+                  value={converterInput}
+                  onChange={(event) => setConverterInput(event.target.value)}
+                />
+              </label>
+              <label className="space-y-2">
+                <span className="text-sm font-medium text-slate-200">변환 결과</span>
+                <Textarea
+                  className="min-h-[360px] font-mono text-xs"
+                  readOnly
+                  value={converterOutput}
+                  placeholder="변환 버튼을 누르면 여기에 정리된 영어 프롬프트가 표시됩니다."
+                />
+              </label>
+            </div>
+            <div className="mt-5 flex flex-wrap justify-end gap-2">
+              <Button onClick={convertPrompt} variant="secondary">
+                <WandSparkles aria-hidden className="h-4 w-4" />
+                변환
+              </Button>
+              <Button disabled={!converterOutput.trim()} onClick={applyConvertedPrompt}>
+                적용
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
