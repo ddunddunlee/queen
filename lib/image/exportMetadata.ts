@@ -14,7 +14,7 @@ export function createAsepriteMetadata(metadata: SpriteSheetMetadata) {
       return frames;
     }, {}),
     meta: {
-      app: "Pixel Sprite Asset Generator",
+      app: "PixIan",
       version: "0.1.0",
       image: `${metadata.name}.png`,
       format: "RGBA8888",

@@ -8,8 +8,8 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const jetbrains = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
-  title: "Pixel Sprite Asset Generator",
-  description: "Prompt builder and sprite sheet tool for game-ready pixel art assets."
+  title: "PixIan (픽시안)",
+  description: "One-page pixel asset generation console for game-ready sprites."
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

@@ -398,8 +398,8 @@ Grid:
         <Card className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="font-mono text-xs uppercase text-sky">pixel asset console</p>
-              <h1 className="mt-1 text-2xl font-bold">픽셀 에셋 생성 콘솔</h1>
+              <p className="font-mono text-xs uppercase text-sky">PixIan / pixel asset console</p>
+              <h1 className="mt-1 text-2xl font-bold">PixIan (픽시안)</h1>
             </div>
             <div className="rounded-md border border-sky/30 bg-sky/10 px-3 py-2 font-mono text-xs text-sky">
               grid-first / transparent PNG

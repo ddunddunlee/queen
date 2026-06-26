@@ -1,6 +1,6 @@
-# Pixel Sprite Asset Generator
+# PixIan (픽시안)
 
-A Next.js MVP for game developers who need repeatable pixel sprite prompts, uploaded-frame cleanup, and sprite sheet exports.
+PixIan is a one-page pixel asset generation console for game developers who need repeatable sprite prompts, uploaded-frame cleanup, and game-ready exports.
 
 ## Features
 
