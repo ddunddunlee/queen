@@ -33,7 +33,7 @@ const defaultBasePrompt = `Core concept lock:
 - Create game-ready pixel art assets only.
 - Keep one consistent character design, proportions, color palette, outline thickness, and camera scale across every output.
 - Transparent background.
-- Centered full-body sprite.
+- Centered asset, icon, prop, or grid cell depending on the selected asset type.
 - Crisp hard-edged pixels.
 - No anti-aliasing, no blur, no gradients, no soft painterly shading.
 - Use a visible pixel grid mindset: every shape must read clearly at the final sprite size.
@@ -49,17 +49,283 @@ Keep weapon direction clear.
 Avoid cropped body parts.
 Leave enough transparent padding for animation alignment.`;
 
-const baseTasks = [
-  { label: "앞 idle", prompt: "front view idle" },
-  { label: "뒤 idle", prompt: "back view idle" },
-  { label: "왼쪽 idle", prompt: "left side idle" },
-  { label: "오른쪽 idle", prompt: "right side idle" },
-  { label: "걷기", prompt: "walk cycle key pose" },
-  { label: "공격 준비", prompt: "attack windup" },
-  { label: "공격", prompt: "attack strike" },
-  { label: "크리티컬", prompt: "critical attack impact" },
-  { label: "피격", prompt: "hit reaction" },
-  { label: "사망", prompt: "death pose" }
+type AssetTypeId = "character" | "weapon" | "item" | "object" | "nature" | "building" | "tile" | "map" | "ui-icon";
+
+interface AssetTask {
+  label: string;
+  prompt: string;
+}
+
+interface AssetTypePreset {
+  id: AssetTypeId;
+  label: string;
+  shortLabel: string;
+  defaultBasePrompt: string;
+  defaultExtraPrompt: string;
+  defaultKeywords: string;
+  tasks: AssetTask[];
+  outputMode: string;
+}
+
+const assetTypePresets: AssetTypePreset[] = [
+  {
+    id: "character",
+    label: "캐릭터",
+    shortLabel: "Character",
+    defaultBasePrompt,
+    defaultExtraPrompt,
+    defaultKeywords: "blue cape, elite guard, darker armor",
+    outputMode: "transparent full-body sprite frames",
+    tasks: [
+      { label: "앞 idle", prompt: "front view idle" },
+      { label: "뒤 idle", prompt: "back view idle" },
+      { label: "왼쪽 idle", prompt: "left side idle" },
+      { label: "오른쪽 idle", prompt: "right side idle" },
+      { label: "걷기", prompt: "walk cycle key pose" },
+      { label: "공격 준비", prompt: "attack windup" },
+      { label: "공격", prompt: "attack strike" },
+      { label: "크리티컬", prompt: "critical attack impact" },
+      { label: "피격", prompt: "hit reaction" },
+      { label: "사망", prompt: "death pose" }
+    ]
+  },
+  {
+    id: "weapon",
+    label: "무기",
+    shortLabel: "Weapon",
+    outputMode: "transparent weapon sprites and icons",
+    defaultKeywords: "sharp silhouette, metal shine, readable icon, fantasy RPG",
+    defaultExtraPrompt: `Keep the weapon shape readable at small size.
+Use a consistent angle and clear outline.
+Avoid hands, character body, background, and motion blur.`,
+    defaultBasePrompt: `Core concept lock:
+- Create game-ready pixel art weapon assets only.
+- Single weapon per output, transparent background.
+- Crisp hard-edged pixels, no anti-aliasing, no blur, no gradients.
+- Clear silhouette readable at the final sprite size.
+- Consistent palette, outline thickness, and camera angle across all weapon outputs.
+- Centered composition with enough transparent padding.
+
+Weapon concept:
+Fantasy RPG weapon set with clean metal edges, simple readable shape language, and limited palette.
+
+Global style:
+retro pixel game weapon asset, thick 1px-style outline, engine-ready transparent PNG`,
+    tasks: [
+      { label: "기본", prompt: "default weapon sprite, 45-degree angle" },
+      { label: "아이콘", prompt: "inventory icon version, centered and readable" },
+      { label: "강화", prompt: "upgraded weapon variant with stronger details" },
+      { label: "드롭", prompt: "dropped weapon lying on the ground" },
+      { label: "장착 방향", prompt: "equipped side-view weapon angle" },
+      { label: "공격 이펙트", prompt: "weapon with small pixel slash effect" }
+    ]
+  },
+  {
+    id: "item",
+    label: "아이템",
+    shortLabel: "Item",
+    outputMode: "transparent inventory item sprites",
+    defaultKeywords: "inventory item, small icon, readable silhouette, RPG loot",
+    defaultExtraPrompt: `Make the object recognizable as an inventory item.
+Keep it centered, compact, and easy to read in a UI slot.`,
+    defaultBasePrompt: `Core concept lock:
+- Create game-ready pixel art item assets only.
+- Single item per output, transparent background.
+- Crisp hard-edged pixels, no blur, no anti-aliasing.
+- Icon-readable silhouette at the final sprite size.
+- Consistent palette, outline thickness, and lighting across all outputs.
+
+Item concept:
+Fantasy RPG collectible item set with clear shapes and limited palette.
+
+Global style:
+retro pixel item icon, compact centered composition, engine-ready transparent PNG`,
+    tasks: [
+      { label: "기본 아이템", prompt: "default inventory item icon" },
+      { label: "희귀", prompt: "rare item variant with subtle premium detail" },
+      { label: "소모품", prompt: "consumable item icon" },
+      { label: "상자 보상", prompt: "loot reward presentation item" },
+      { label: "작은 버전", prompt: "tiny readable item version" }
+    ]
+  },
+  {
+    id: "object",
+    label: "사물/소품",
+    shortLabel: "Object",
+    outputMode: "transparent prop sprites",
+    defaultKeywords: "environment prop, RPG object, clear outline, interactable",
+    defaultExtraPrompt: `Make it usable as an interactable map prop.
+Avoid characters and background scenery.`,
+    defaultBasePrompt: `Core concept lock:
+- Create game-ready pixel art prop assets only.
+- Single object per output, transparent background.
+- Crisp hard-edged pixels, no blur, no anti-aliasing.
+- Consistent 3/4 RPG view, palette, outline thickness, and scale.
+- Centered object with enough transparent padding.
+
+Object concept:
+Fantasy RPG environment props suitable for a tile-based game map.
+
+Global style:
+retro pixel prop asset, readable silhouette, engine-ready transparent PNG`,
+    tasks: [
+      { label: "기본", prompt: "default intact prop" },
+      { label: "상호작용", prompt: "interactable highlighted prop" },
+      { label: "파손", prompt: "broken damaged prop variant" },
+      { label: "열림", prompt: "opened state prop" },
+      { label: "닫힘", prompt: "closed state prop" },
+      { label: "그림자 포함", prompt: "prop with small pixel contact shadow" }
+    ]
+  },
+  {
+    id: "nature",
+    label: "나무/식물",
+    shortLabel: "Nature",
+    outputMode: "transparent environment nature sprites",
+    defaultKeywords: "tree, bush, foliage, top-down RPG, natural palette",
+    defaultExtraPrompt: `Keep foliage readable and not too noisy.
+Use a clear trunk or root anchor when needed.`,
+    defaultBasePrompt: `Core concept lock:
+- Create game-ready pixel art nature assets only.
+- Single tree, bush, plant, or natural prop per output.
+- Transparent background.
+- Crisp hard-edged pixels, no blur, no anti-aliasing.
+- Consistent top-down or 3/4 RPG map view, scale, and palette.
+- Readable silhouette and clear tile placement.
+
+Nature concept:
+RPG map vegetation assets with limited palette and clean pixel clusters.
+
+Global style:
+retro pixel nature prop, engine-ready transparent PNG`,
+    tasks: [
+      { label: "작은 나무", prompt: "small tree sprite" },
+      { label: "큰 나무", prompt: "large tree sprite" },
+      { label: "덤불", prompt: "bush sprite" },
+      { label: "꽃/풀", prompt: "small grass and flower prop" },
+      { label: "잘린 나무", prompt: "tree stump sprite" },
+      { label: "계절 변화", prompt: "seasonal foliage variant" }
+    ]
+  },
+  {
+    id: "building",
+    label: "건물/구조물",
+    shortLabel: "Building",
+    outputMode: "transparent structure sprites",
+    defaultKeywords: "small building, RPG map, readable roof, pixel structure",
+    defaultExtraPrompt: `Use a consistent map-view perspective.
+Keep doorway and roof shape readable.`,
+    defaultBasePrompt: `Core concept lock:
+- Create game-ready pixel art building or structure assets only.
+- Transparent background, single structure per output.
+- Crisp hard-edged pixels, no blur, no anti-aliasing.
+- Consistent 3/4 RPG map perspective, scale, and palette.
+- Readable silhouette suitable for placement on a tile map.
+
+Structure concept:
+Small fantasy RPG structures, houses, ruins, fences, and map buildings.
+
+Global style:
+retro pixel structure asset, clean outline, engine-ready transparent PNG`,
+    tasks: [
+      { label: "작은 집", prompt: "small house structure" },
+      { label: "상점", prompt: "shop building structure" },
+      { label: "폐허", prompt: "ruined structure variant" },
+      { label: "울타리", prompt: "fence segment" },
+      { label: "문/입구", prompt: "doorway or entrance structure" },
+      { label: "지붕 변형", prompt: "roof variant structure" }
+    ]
+  },
+  {
+    id: "tile",
+    label: "타일",
+    shortLabel: "Tile",
+    outputMode: "seamless grid-aligned tiles",
+    defaultKeywords: "seamless tile, top-down, repeatable edges, terrain",
+    defaultExtraPrompt: `Make edges repeatable and grid-aligned.
+No isolated character, object, or perspective distortion.`,
+    defaultBasePrompt: `Core concept lock:
+- Create game-ready pixel art terrain tiles only.
+- Top-down view.
+- Seamless or edge-compatible tile design.
+- Crisp hard-edged pixels, no blur, no anti-aliasing.
+- Must align to a visible square grid.
+- Repeatable edges, clean corners, no isolated characters or props.
+
+Tile concept:
+RPG terrain tiles for grass, dirt, water, stone, floor, wall, cliff, and path systems.
+
+Global style:
+retro pixel tileset asset, grid-aligned, engine-ready PNG`,
+    tasks: [
+      { label: "중앙", prompt: "terrain center tile, seamless repeat" },
+      { label: "가장자리", prompt: "terrain edge tile" },
+      { label: "코너", prompt: "terrain corner tile" },
+      { label: "길", prompt: "dirt path tile" },
+      { label: "물가", prompt: "water edge tile" },
+      { label: "바닥", prompt: "floor tile" },
+      { label: "벽", prompt: "wall tile" },
+      { label: "절벽", prompt: "cliff tile" }
+    ]
+  },
+  {
+    id: "map",
+    label: "지도 조각",
+    shortLabel: "Map",
+    outputMode: "tile-map chunks and map pieces",
+    defaultKeywords: "map chunk, top-down RPG, tile-based, terrain composition",
+    defaultExtraPrompt: `Compose from tile-like elements.
+Keep it readable as a small game map section.`,
+    defaultBasePrompt: `Core concept lock:
+- Create game-ready pixel art map chunks only.
+- Top-down tile-based game map view.
+- Crisp hard-edged pixels, no blur, no anti-aliasing.
+- Clear terrain zones and grid-aware layout.
+- Avoid UI labels, text, characters, and camera perspective distortion.
+
+Map concept:
+Small RPG map chunks made from terrain tiles, paths, water, cliffs, walls, and props.
+
+Global style:
+retro pixel map piece, tile-compatible, engine-ready PNG`,
+    tasks: [
+      { label: "숲", prompt: "small forest map chunk" },
+      { label: "마을", prompt: "small village map chunk" },
+      { label: "동굴", prompt: "cave map chunk" },
+      { label: "던전", prompt: "dungeon room map chunk" },
+      { label: "강/물길", prompt: "river map chunk" },
+      { label: "길 교차", prompt: "road intersection map chunk" }
+    ]
+  },
+  {
+    id: "ui-icon",
+    label: "UI 아이콘",
+    shortLabel: "UI Icon",
+    outputMode: "transparent pixel UI icons",
+    defaultKeywords: "UI icon, clear silhouette, game HUD, readable symbol",
+    defaultExtraPrompt: `Make it readable in a small button or inventory slot.
+Avoid text and complex background.`,
+    defaultBasePrompt: `Core concept lock:
+- Create game-ready pixel art UI icons only.
+- Single icon per output, transparent background.
+- Crisp hard-edged pixels, no blur, no anti-aliasing.
+- Clear symbolic silhouette readable at small size.
+- Consistent palette, outline thickness, and icon scale.
+
+UI concept:
+Pixel game HUD and inventory icons with clear symbols and limited palette.
+
+Global style:
+retro pixel UI icon, centered, engine-ready transparent PNG`,
+    tasks: [
+      { label: "스킬", prompt: "skill icon" },
+      { label: "버프", prompt: "buff status icon" },
+      { label: "디버프", prompt: "debuff status icon" },
+      { label: "인벤토리", prompt: "inventory slot icon" },
+      { label: "버튼", prompt: "menu button icon" },
+      { label: "퀘스트", prompt: "quest marker icon" }
+    ]
+  }
 ];
 
 const keywordBank = [
@@ -82,6 +348,7 @@ const promptPresetStorageKey = "pixel-asset-prompt-presets";
 interface PromptPreset {
   id: string;
   name: string;
+  assetTypeId?: AssetTypeId;
   basePrompt: string;
   extraPrompt: string;
   customKeywordText: string;
@@ -104,21 +371,22 @@ Output contract:
 - Transparent PNG, single sprite only, not a sprite sheet.`;
 }
 
-function buildOptimizedPrompt(rawPrompt: string, existingExtraPrompt: string) {
+function buildOptimizedPrompt(rawPrompt: string, existingExtraPrompt: string, assetType: AssetTypePreset) {
   const concept = rawPrompt.trim() || "A game-ready pixel art character asset.";
   const extra = existingExtraPrompt.trim();
 
   return `Core concept lock:
 - Create game-ready pixel art assets only.
 - Maintain one consistent design language across every generated output.
-- Use consistent character proportions, silhouette, color palette, outline thickness, camera scale, and lighting.
+- Asset type: ${assetType.shortLabel}.
+- Use consistent silhouette, color palette, outline thickness, camera scale, and lighting.
 - Transparent background.
 - Centered full-body sprite.
 - Crisp hard-edged pixels.
 - No anti-aliasing, no blur, no gradients, no soft painterly shading.
 - Every shape must read clearly on a visible pixel grid at the final sprite size.
 
-Character / asset concept:
+Asset concept:
 ${concept}
 
 Required visual constraints:
@@ -135,13 +403,14 @@ retro pixel game asset, sprite-sheet compatible, engine-ready transparent PNG${e
 
 export function GenerationTool() {
   const isStaticExport = process.env.NEXT_PUBLIC_STATIC_EXPORT === "true";
+  const [assetTypeId, setAssetTypeId] = useState<AssetTypeId>("character");
   const [basePrompt, setBasePrompt] = useState(defaultBasePrompt);
   const [extraPrompt, setExtraPrompt] = useState(defaultExtraPrompt);
   const [count, setCount] = useState(8);
   const [spriteSize, setSpriteSize] = useState<PreviewSpriteSize>(32);
   const [randomKeywordCount, setRandomKeywordCount] = useState(3);
-  const [customKeywordText, setCustomKeywordText] = useState("blue cape, elite guard, darker armor");
-  const [selectedTasks, setSelectedTasks] = useState<string[]>(baseTasks.slice(0, 8).map((task) => task.prompt));
+  const [customKeywordText, setCustomKeywordText] = useState(assetTypePresets[0].defaultKeywords);
+  const [selectedTasks, setSelectedTasks] = useState<string[]>(assetTypePresets[0].tasks.slice(0, 8).map((task) => task.prompt));
   const [customTask, setCustomTask] = useState("");
   const [presetName, setPresetName] = useState("기본 기사 프리셋");
   const [promptPresets, setPromptPresets] = useState<PromptPreset[]>([]);
@@ -156,6 +425,11 @@ export function GenerationTool() {
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  const activeAssetType = useMemo(
+    () => assetTypePresets.find((preset) => preset.id === assetTypeId) || assetTypePresets[0],
+    [assetTypeId]
+  );
 
   useEffect(() => {
     const savedToken = window.localStorage.getItem("sprite-generator-subscription-token");
@@ -198,7 +472,14 @@ export function GenerationTool() {
     [customKeywordText]
   );
 
-  const finalPrompt = useMemo(() => buildFinalPrompt(basePrompt, extraPrompt, spriteSize), [basePrompt, extraPrompt, spriteSize]);
+  const finalPrompt = useMemo(
+    () => `${buildFinalPrompt(basePrompt, extraPrompt, spriteSize)}
+
+Asset type:
+- ${activeAssetType.shortLabel}
+- Output mode: ${activeAssetType.outputMode}`,
+    [activeAssetType.outputMode, activeAssetType.shortLabel, basePrompt, extraPrompt, spriteSize]
+  );
 
   const plannedJobs = useMemo(
     () =>
@@ -228,6 +509,18 @@ export function GenerationTool() {
     setSelectedTasks((current) => (current.includes(task) ? current.filter((item) => item !== task) : [...current, task]));
   }
 
+  function changeAssetType(nextAssetTypeId: AssetTypeId) {
+    const nextPreset = assetTypePresets.find((preset) => preset.id === nextAssetTypeId) || assetTypePresets[0];
+    setAssetTypeId(nextPreset.id);
+    setBasePrompt(nextPreset.defaultBasePrompt);
+    setExtraPrompt(nextPreset.defaultExtraPrompt);
+    setCustomKeywordText(nextPreset.defaultKeywords);
+    setSelectedTasks(nextPreset.tasks.slice(0, 8).map((task) => task.prompt));
+    setSelectedPresetId("");
+    setPresetName(`${nextPreset.label} 프리셋`);
+    setStatus(`${nextPreset.label} 모드로 전환했습니다.`);
+  }
+
   function addCustomTask() {
     const task = customTask.trim();
     if (!task) return;
@@ -247,6 +540,7 @@ export function GenerationTool() {
     const preset: PromptPreset = {
       id: selectedPresetId || crypto.randomUUID(),
       name,
+      assetTypeId,
       basePrompt,
       extraPrompt,
       customKeywordText
@@ -266,6 +560,9 @@ export function GenerationTool() {
     setSelectedPresetId(id);
     if (!preset) return;
     setPresetName(preset.name);
+    if (preset.assetTypeId && assetTypePresets.some((assetType) => assetType.id === preset.assetTypeId)) {
+      setAssetTypeId(preset.assetTypeId);
+    }
     setBasePrompt(preset.basePrompt);
     setExtraPrompt(preset.extraPrompt);
     setCustomKeywordText(preset.customKeywordText);
@@ -287,7 +584,7 @@ export function GenerationTool() {
   }
 
   function convertPrompt() {
-    setConverterOutput(buildOptimizedPrompt(converterInput, extraPrompt));
+    setConverterOutput(buildOptimizedPrompt(converterInput, extraPrompt, activeAssetType));
   }
 
   function applyConvertedPrompt() {
@@ -357,6 +654,8 @@ export function GenerationTool() {
           model,
           count: sprites.length,
           spriteSize,
+          assetType: activeAssetType.label,
+          outputMode: activeAssetType.outputMode,
           basePrompt,
           extraPrompt,
           jobs: plannedJobs,
@@ -421,6 +720,16 @@ Grid:
                 프롬프트 변환기
               </Button>
             </div>
+            <label className="space-y-2">
+              <span className="text-sm font-medium text-slate-700">에셋 타입</span>
+              <Select value={assetTypeId} onChange={(event) => changeAssetType(event.target.value as AssetTypeId)}>
+                {assetTypePresets.map((preset) => (
+                  <option key={preset.id} value={preset.id}>
+                    {preset.label}
+                  </option>
+                ))}
+              </Select>
+            </label>
             <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto]">
               <Input
                 placeholder="저장 이름"
@@ -487,7 +796,10 @@ Grid:
 
         <Card className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="font-semibold">에셋 작업 방식</h2>
+            <div>
+              <h2 className="font-semibold">에셋 작업 방식</h2>
+              <p className="mt-1 text-xs text-slate-500">{activeAssetType.outputMode}</p>
+            </div>
             <div className="flex gap-2">
               <Input className="w-52" placeholder="추가 작업명" value={customTask} onChange={(event) => setCustomTask(event.target.value)} />
               <Button className="h-10 w-10 p-0" onClick={addCustomTask} variant="secondary">
@@ -496,7 +808,7 @@ Grid:
             </div>
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
-            {baseTasks.map((task) => (
+            {activeAssetType.tasks.map((task) => (
               <button
                 className={`focus-ring min-h-11 rounded-md border px-3 py-2 text-left text-sm transition ${
                   selectedTasks.includes(task.prompt)
@@ -512,10 +824,10 @@ Grid:
               </button>
             ))}
           </div>
-          {selectedTasks.some((task) => !baseTasks.some((baseTask) => baseTask.prompt === task)) ? (
+          {selectedTasks.some((task) => !activeAssetType.tasks.some((baseTask) => baseTask.prompt === task)) ? (
             <div className="flex flex-wrap gap-2">
               {selectedTasks
-                .filter((task) => !baseTasks.some((baseTask) => baseTask.prompt === task))
+                .filter((task) => !activeAssetType.tasks.some((baseTask) => baseTask.prompt === task))
                 .map((task) => (
                   <button
                     className="focus-ring inline-flex items-center gap-2 rounded-md border border-violet/30 bg-violet/10 px-3 py-2 text-sm text-slate-900"
