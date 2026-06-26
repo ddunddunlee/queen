@@ -10,7 +10,7 @@ export function Header() {
           </span>
           <span>
             <span className="block text-sm font-bold text-white">Pixel Sprite Asset Generator</span>
-            <span className="block text-xs text-slate-400">One-page pixel asset console</span>
+            <span className="block text-xs text-slate-400">픽셀 에셋 원페이지 제작 콘솔</span>
           </span>
         </Link>
       </div>
