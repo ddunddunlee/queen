@@ -9,17 +9,17 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink: "#070914",
-        panel: "#101521",
-        panelSoft: "#151b2a",
-        line: "#253044",
-        mint: "#39d98a",
-        sky: "#4fb9ff",
-        violet: "#9b7cff",
-        amber: "#ffc857"
+        ink: "#f6f9ff",
+        panel: "#ffffff",
+        panelSoft: "#edf5ff",
+        line: "#c9d8e8",
+        mint: "#10b981",
+        sky: "#2678ff",
+        violet: "#7c5cff",
+        amber: "#d97706"
       },
       boxShadow: {
-        glow: "0 0 0 1px rgba(79,185,255,.18), 0 18px 60px rgba(0,0,0,.28)"
+        glow: "0 0 0 1px rgba(38,120,255,.10), 0 18px 50px rgba(30,64,175,.10)"
       },
       fontFamily: {
         mono: ["var(--font-mono)", "ui-monospace", "SFMono-Regular", "Menlo", "monospace"]

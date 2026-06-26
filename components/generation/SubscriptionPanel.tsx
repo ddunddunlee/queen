@@ -16,7 +16,7 @@ export function SubscriptionPanel({ onTokenChange, token }: SubscriptionPanelPro
         <div className="flex-1 space-y-3">
           <div>
             <h2 className="font-semibold">구독 접근 토큰</h2>
-            <p className="mt-1 text-sm leading-6 text-slate-400">
+            <p className="mt-1 text-sm leading-6 text-slate-600">
               자동 생성은 서버에 설정된 구독 토큰과 일치할 때만 실행됩니다.
             </p>
           </div>

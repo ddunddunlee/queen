@@ -451,7 +451,7 @@ Grid:
             <Textarea className="min-h-[120px] font-mono text-xs" value={extraPrompt} onChange={(event) => setExtraPrompt(event.target.value)} />
             <div className="grid gap-3 sm:grid-cols-3">
               <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-200">에셋 사이즈</span>
+              <span className="text-sm font-medium text-slate-700">에셋 사이즈</span>
                 <Select value={spriteSize} onChange={(event) => setSpriteSize(Number(event.target.value) as PreviewSpriteSize)}>
                   <option value={32}>32x32</option>
                   <option value={64}>64x64</option>
@@ -459,7 +459,7 @@ Grid:
                 </Select>
               </label>
               <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-200">작업량</span>
+                <span className="text-sm font-medium text-slate-700">작업량</span>
                 <Select value={count} onChange={(event) => setCount(Number(event.target.value))}>
                   {[1, 2, 3, 4, 5, 6, 7, 8].map((value) => (
                     <option key={value} value={value}>
@@ -469,7 +469,7 @@ Grid:
                 </Select>
               </label>
               <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-200">랜덤 키워드</span>
+                <span className="text-sm font-medium text-slate-700">랜덤 키워드</span>
                 <Select value={randomKeywordCount} onChange={(event) => setRandomKeywordCount(Number(event.target.value))}>
                   {[0, 1, 2, 3, 4, 5].map((value) => (
                     <option key={value} value={value}>
@@ -480,7 +480,7 @@ Grid:
               </label>
             </div>
             <label className="space-y-2">
-              <span className="text-sm font-medium text-slate-200">고정 키워드</span>
+              <span className="text-sm font-medium text-slate-700">고정 키워드</span>
               <Input value={customKeywordText} onChange={(event) => setCustomKeywordText(event.target.value)} />
             </label>
         </Card>
@@ -500,8 +500,8 @@ Grid:
               <button
                 className={`focus-ring min-h-11 rounded-md border px-3 py-2 text-left text-sm transition ${
                   selectedTasks.includes(task.prompt)
-                    ? "border-sky bg-sky/15 text-white"
-                    : "border-line bg-ink/60 text-slate-400 hover:border-slate-500"
+                    ? "border-sky bg-sky/10 text-slate-950"
+                    : "border-line bg-white/80 text-slate-600 hover:border-sky/40 hover:bg-panelSoft"
                 }`}
                 key={task.prompt}
                 onClick={() => toggleTask(task.prompt)}
@@ -518,7 +518,7 @@ Grid:
                 .filter((task) => !baseTasks.some((baseTask) => baseTask.prompt === task))
                 .map((task) => (
                   <button
-                    className="focus-ring inline-flex items-center gap-2 rounded-md border border-violet/40 bg-violet/15 px-3 py-2 text-sm text-white"
+                    className="focus-ring inline-flex items-center gap-2 rounded-md border border-violet/30 bg-violet/10 px-3 py-2 text-sm text-slate-900"
                     key={task}
                     onClick={() => toggleTask(task)}
                     type="button"
@@ -552,7 +552,7 @@ Grid:
           </div>
           <div className="grid gap-2 md:grid-cols-2">
             {plannedJobs.map((job, index) => (
-              <div className="rounded-md border border-line bg-ink/60 px-3 py-2 text-xs" key={`${job}-${index}`}>
+              <div className="rounded-md border border-line bg-white/80 px-3 py-2 text-xs text-slate-800" key={`${job}-${index}`}>
                 <span className="font-mono text-sky">#{index + 1}</span> {job}
                 <span className="block truncate text-slate-500">
                   <Shuffle aria-hidden className="mr-1 inline h-3 w-3" />
@@ -576,23 +576,23 @@ Grid:
               ZIP 다운로드
             </Button>
           </div>
-          <div className="tool-grid grid min-h-[560px] gap-3 rounded-lg border border-line bg-ink p-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="tool-grid grid min-h-[560px] gap-3 rounded-lg border border-line bg-white/70 p-3 sm:grid-cols-2 lg:grid-cols-3">
             {previews.length === 0
               ? plannedJobs.slice(0, Math.min(count, 8)).map((job, index) => (
                   <div
-                    className="grid aspect-square place-items-center rounded-md border border-sky/20 bg-ink/75 p-3 text-center"
+                    className="grid aspect-square place-items-center rounded-md border border-sky/20 bg-white/82 p-3 text-center"
                     key={`${job}-placeholder-${index}`}
                   >
                     <div>
                       <span className="font-mono text-xs text-sky">{spriteSize}x{spriteSize}</span>
-                      <p className="mt-2 text-sm font-semibold text-slate-300">{job}</p>
-                      <Layers3 aria-hidden className="mx-auto mt-3 h-5 w-5 text-slate-600" />
+                      <p className="mt-2 text-sm font-semibold text-slate-700">{job}</p>
+                      <Layers3 aria-hidden className="mx-auto mt-3 h-5 w-5 text-slate-400" />
                     </div>
                   </div>
                 ))
               : previews.map((sprite, index) => (
-                  <article className="rounded-md border border-line bg-panelSoft/70 p-2" key={sprite.id}>
-                    <img alt={`Generated asset ${index + 1}`} className="pixelated aspect-square w-full rounded bg-ink object-contain p-2" src={sprite.src} />
+                  <article className="rounded-md border border-line bg-white/90 p-2" key={sprite.id}>
+                    <img alt={`Generated asset ${index + 1}`} className="pixelated aspect-square w-full rounded bg-panelSoft object-contain p-2" src={sprite.src} />
                     <Button
                       className="mt-2 w-full"
                       onClick={() => downloadBlob(base64ToBlob(sprite.b64Json, sprite.mimeType), `asset_${index + 1}.png`)}
@@ -613,7 +613,7 @@ Grid:
               <div>
                 <p className="font-mono text-xs uppercase text-sky">prompt optimizer</p>
                 <h2 className="mt-1 text-xl font-bold">프롬프트 변환기</h2>
-                <p className="mt-1 text-sm text-slate-400">
+                <p className="mt-1 text-sm text-slate-600">
                   대략적인 설명을 픽셀 에셋 생성에 유리한 영어 기본 프롬프트 구조로 정리합니다.
                 </p>
               </div>
@@ -623,7 +623,7 @@ Grid:
             </div>
             <div className="mt-5 grid gap-4 lg:grid-cols-2">
               <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-200">원본 설명</span>
+                <span className="text-sm font-medium text-slate-700">원본 설명</span>
                 <Textarea
                   className="min-h-[360px] font-mono text-xs"
                   value={converterInput}
@@ -631,7 +631,7 @@ Grid:
                 />
               </label>
               <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-200">변환 결과</span>
+                <span className="text-sm font-medium text-slate-700">변환 결과</span>
                 <Textarea
                   className="min-h-[360px] font-mono text-xs"
                   readOnly
